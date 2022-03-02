@@ -1,0 +1,81 @@
+//SPDX-License-Identifier: MIT
+
+pragma solidity 0.5.17;
+
+import '@openzeppelin/contracts/utils/ReentrancyGuard.sol';
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/access/roles/WhitelistedRole.sol";
+import "../interfaces/IKalmarTradingRoute.sol";
+import "../interfaces/ICurve2P.sol";
+
+contract KalmarCurveRouter is IKalmarTradingRoute, WhitelistedRole, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+    using SafeMath for uint256;
+
+    // curve-mim-usdt-usdc
+    ICurve2P public constant curvePool = ICurve2P(0x2dd7C9371965472E5A5fD28fbE165007c61439E1);
+    IERC20 public constant mim = IERC20(0x82f0B8B456c1A451378467398982d4834b6829c1); // 0
+    IERC20 public constant fusdt = IERC20(0x049d68029688eAbF473097a2fC38ef61633A3C7A); // 1
+    IERC20 public constant usdc = IERC20(0x04068DA6C83AFCFA0e13ba15A6696662335D5B75); // 2
+
+    function trade(
+        IERC20 _src,
+        IERC20 _dest,
+        uint256 _srcAmount
+    )
+        public
+        payable
+        onlyWhitelisted
+        nonReentrant
+        returns(uint256 _destAmount)
+    {
+        (uint256 i, uint256 j) = getTokenIndexes(_src, _dest);
+
+        uint256 balanceBefore = _dest.balanceOf(address(this));
+        _src.safeTransferFrom(msg.sender, address(this), _srcAmount);
+        _src.safeApprove(address(curvePool), _srcAmount);
+        curvePool.exchange(int128(i), int128(j), _srcAmount, 0);
+
+        uint256 balanceAfter = _dest.balanceOf(address(this));
+        _destAmount = balanceAfter.sub(balanceBefore);
+        _dest.safeTransfer(msg.sender, _destAmount);
+        emit Trade(_src, _srcAmount, _dest, _destAmount);
+    }
+
+    function getDestinationReturnAmount(
+        IERC20 _src,
+        IERC20 _dest,
+        uint256 _srcAmount
+    )
+        public
+        view
+        returns(uint256 _destAmount)
+    {
+        (uint256 i, uint256 j) = getTokenIndexes(_src, _dest);
+
+        return curvePool.get_dy(int128(i), int128(j), _srcAmount);
+    }
+
+    function getTokenIndexes(
+        IERC20 _src,
+        IERC20 _dest
+    )
+        public
+        pure
+        returns(uint256 i, uint256 j)
+    {
+        require(_src != _dest, "KalmyCurveRouter: Destination token can not be source token");
+        i = uint256(-1);
+        j = uint256(-1);
+        i = _src == mim ? 0 : i;
+        i = _src == fusdt ? 1 : i;
+        i = _src == usdc ? 2 : i;
+
+
+        j = _dest == mim ? 0 : j;
+        j = _dest == fusdt ? 1 : j;
+        j = _dest == usdc ? 2 : j;
+
+        require(i != uint256(-1) && j != uint256(-1), "KalmyCurveRouter: Tokens not supported!");
+    }
+}

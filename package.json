@@ -1,0 +1,29 @@
+{
+  "name": "kalmar-bestrate",
+  "version": "1.0.0",
+  "description": "Bestrate Aggregator",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx builder test"
+  },
+  "author": "ISC",
+  "license": "MIT",
+  "devDependencies": {
+    "@openzeppelin/contracts": "^2.5.0",
+    "@openzeppelin/test-helpers": "^0.5.10",
+    "@nomiclabs/hardhat-ethers": "^2.0.1",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@typechain/ethers-v5": "^6.0.1",
+    "dotenv": "^8.2.0",
+    "ethereum-waffle": "^3.2.2",
+    "ethers": "^5.0.31",
+    "hardhat": "^2.0.11",
+    "hardhat-typechain": "^0.3.5",
+    "solidity-coverage": "^0.7.15",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.2"
+  },
+  "dependencies": {
+    "truffle-hdwallet-provider": "^1.0.17"
+  }
+}

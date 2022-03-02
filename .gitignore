@@ -1,0 +1,7 @@
+node_modules
+migrations
+flatten
+.git
+build
+truffle-config.js
+package-lock.json
